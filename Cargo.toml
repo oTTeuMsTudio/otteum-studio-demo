@@ -17,7 +17,7 @@ broadcaster = "1.0"
 console_log = "1.0"
 console_error_panic_hook = "0.1.7"
 futures = "0.3.30"
-leptos = { path = "../../leptos" }
+leptos = { git = "https://github.com/leptos-rs/leptos.git", tag = "v0.6.0" }
 leptos_actix = { path = "../../integrations/actix", optional = true }
 leptos_router = { path = "../../router" }
 log = "0.4.22"
