@@ -1,39 +1,61 @@
-use leptos::{control_flow::Show, portal::Portal, prelude::*};
+use leptos::prelude::*;
+mod api;
+mod routes;
+use leptos_meta::{provide_meta_context, Link, Meta, MetaTags, Stylesheet};
+use leptos_router::{
+    components::{FlatRoutes, Route, Router, RoutingProgress},
+    Lazy, OptionalParamSegment, ParamSegment, StaticSegment,
+};
+use routes::{nav::*, stories::*, story::*, users::*};
+use std::time::Duration;
+
+pub fn shell(options: LeptosOptions) -> impl IntoView {
+    view! {
+        <!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <AutoReload options=options.clone() />
+                <HydrationScripts options/>
+                <MetaTags/>
+            </head>
+            <body>
+                <App/>
+            </body>
+        </html>
+    }
+}
 
 #[component]
 pub fn App() -> impl IntoView {
-    let (show_overlay, set_show_overlay) = signal(false);
-    let (show_inside_overlay, set_show_inside_overlay) = signal(false);
+    provide_meta_context();
+    let (is_routing, set_is_routing) = signal(false);
 
     view! {
-        <div>
-            <button id="btn-show" on:click=move |_| set_show_overlay.set(true)>
-                "Show Overlay"
-            </button>
-
-            <Show when=move || show_overlay.get() fallback=|| ()>
-                <div>Show</div>
-                <Portal mount=document().get_element_by_id("app").unwrap()>
-                    <div style="position: fixed; z-index: 10; width: 100vw; height: 100vh; top: 0; left: 0; background: rgba(0, 0, 0, 0.8); color: white;">
-                        <p>This is in the body element</p>
-                        <button id="btn-hide" on:click=move |_| set_show_overlay.set(false)>
-                            "Close Overlay"
-                        </button>
-                        <button
-                            id="btn-toggle"
-                            on:click=move |_| {
-                                set_show_inside_overlay.set(!show_inside_overlay.get())
-                            }
-                        >
-                            "Toggle inner"
-                        </button>
-
-                        <Show when=move || show_inside_overlay.get() fallback=|| view! { "Hidden" }>
-                            "Visible"
-                        </Show>
-                    </div>
-                </Portal>
-            </Show>
-        </div>
+        <Stylesheet id="leptos" href="/pkg/hackernews_axum.css"/>
+        <Link rel="shortcut icon" type_="image/ico" href="/favicon.ico"/>
+        <Meta name="description" content="Leptos implementation of a HackerNews demo."/>
+        <Router set_is_routing>
+            // shows a progress bar while async data are loading
+            <div class="routing-progress">
+                <RoutingProgress is_routing max_time=Duration::from_millis(250)/>
+            </div>
+            <Nav />
+            <main>
+                <FlatRoutes fallback=|| "Not found.">
+                    <Route path=(StaticSegment("users"), ParamSegment("id")) view={Lazy::<UserRoute>::new()}/>
+                    <Route path=(StaticSegment("stories"), ParamSegment("id")) view={Lazy::<StoryRoute>::new()}/>
+                    <Route path=OptionalParamSegment("stories") view=Stories/>
+                </FlatRoutes>
+            </main>
+        </Router>
     }
+}
+
+#[cfg(feature = "hydrate")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn hydrate() {
+    console_error_panic_hook::set_once();
+    leptos::mount::hydrate_body(App);
 }
