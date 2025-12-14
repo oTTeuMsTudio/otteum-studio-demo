@@ -12,8 +12,6 @@ pub async fn file_handler(
     let res = get_static_file(uri.clone(), "/pkg").await?;
 
     if res.status() == StatusCode::NOT_FOUND {
-        // try with `.html`
-        // TODO: handle if the Uri has query parameters
         match format!("{}.html", uri).parse() {
             Ok(uri_html) => get_static_file(uri_html, "/pkg").await,
             Err(_) => Err((
